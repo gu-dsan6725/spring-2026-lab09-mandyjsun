@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Constants
-DEFAULT_MODEL: str = "claude-haiku-4-5-20251001"
+DEFAULT_MODEL: str = "groq/llama-3.1-8b-instant"
 DEFAULT_USER_ID: str = "default_user"
 
 
@@ -727,6 +727,10 @@ def _run_demo() -> None:
     ]
 
     for i, (user_msg, description) in enumerate(conversations, 1):
+        if i > 1:
+            import time
+            time.sleep(15)
+
         print(f"\n{'─' * 70}")
         print(f"Turn {i}: {description}")
         print(f"{'─' * 70}")
