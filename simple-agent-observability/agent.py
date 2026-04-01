@@ -17,9 +17,11 @@ from braintrust.otel import BraintrustSpanProcessor
 from ddgs import DDGS
 from dotenv import load_dotenv
 from opentelemetry.sdk.trace import TracerProvider
+from mcp.client.streamable_http import streamablehttp_client
 from strands import Agent
 from strands.telemetry import StrandsTelemetry
 from strands.tools.decorator import tool
+from strands.tools.mcp import MCPClient
 
 
 # Configure logging
@@ -135,11 +137,12 @@ Always cite your sources when using search results."""
     from strands.models import AnthropicModel
 
     model = AnthropicModel(
-        model_id="claude-3-haiku-20240307",
+        model_id="claude-haiku-4-5-20251001",
         max_tokens=4096
     )
 
     # Create agent - observability is already configured globally via TracerProvider
+    # MCP tools are added in main() where the context manager stays open
     agent = Agent(
         system_prompt=system_prompt,
         model=model,
@@ -147,7 +150,7 @@ Always cite your sources when using search results."""
     )
 
     logger.info("Agent created successfully with Braintrust observability")
-    return agent
+    return agent, model, system_prompt
 
 
 async def _run_agent_async(
@@ -176,49 +179,59 @@ def main() -> None:
     """Main function to run the agent."""
     logger.info("Starting Simple Agent with Observability")
 
-    # Create agent
-    agent = _create_agent()
+    # Create base agent components
+    _, model, system_prompt = _create_agent()
 
-    # Example queries to test different tools
-    test_queries = [
-        "What is the latest news about AI?",
-        "How do I use async/await in Python?",
-        "What are the best practices for React hooks?"
-    ]
+    # Set up MCP client and keep connection open for the entire session
+    def create_streamable_http_transport():
+        return streamablehttp_client("https://mcp.context7.com/mcp")
+
+    mcp_client = MCPClient(create_streamable_http_transport)
 
     print("\n" + "="*80)
     print("Simple Agent with Observability Demo")
     print("="*80 + "\n")
 
-    # Run interactive loop
-    print("Ask me anything! I can search the web with DuckDuckGo.")
-    print("Type 'quit' to exit.\n")
+    with mcp_client:
+        mcp_tools = mcp_client.list_tools_sync()
+        logger.info(f"Loaded {len(mcp_tools)} MCP tools from Context7")
 
-    while True:
-        try:
-            user_input = input("You: ").strip()
+        # Create agent with both DuckDuckGo and MCP tools
+        agent = Agent(
+            system_prompt=system_prompt,
+            model=model,
+            tools=[duckduckgo_search] + mcp_tools
+        )
 
-            if user_input.lower() in ["quit", "exit", "q"]:
-                print("\nGoodbye!")
+        # Run interactive loop
+        print("Ask me anything! I can search the web with DuckDuckGo and Context7 docs.")
+        print("Type 'quit' to exit.\n")
+
+        while True:
+            try:
+                user_input = input("You: ").strip()
+
+                if user_input.lower() in ["quit", "exit", "q"]:
+                    print("\nGoodbye!")
+                    break
+
+                if not user_input:
+                    continue
+
+                # Run agent
+                response = asyncio.run(_run_agent_async(agent, user_input))
+
+                print(f"\nAgent: {response}\n")
+
+            except EOFError:
+                print("\n\nGoodbye!")
                 break
-
-            if not user_input:
-                continue
-
-            # Run agent
-            response = asyncio.run(_run_agent_async(agent, user_input))
-
-            print(f"\nAgent: {response}\n")
-
-        except EOFError:
-            print("\n\nGoodbye!")
-            break
-        except KeyboardInterrupt:
-            print("\n\nGoodbye!")
-            break
-        except Exception as e:
-            logger.error(f"Error running agent: {e}")
-            print(f"\nError: {e}\n")
+            except KeyboardInterrupt:
+                print("\n\nGoodbye!")
+                break
+            except Exception as e:
+                logger.error(f"Error running agent: {e}")
+                print(f"\nError: {e}\n")
 
 
 if __name__ == "__main__":
