@@ -38,10 +38,11 @@ Thumbs.db
 .scratchpad/
 logs/
 output/
-*.txt
+
 
 # Memory data
 data/
 memory_store/
 *.pkl
 *.json
+simple-agent-observability/node_modules

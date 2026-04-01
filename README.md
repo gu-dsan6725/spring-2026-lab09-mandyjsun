@@ -139,6 +139,7 @@ uv sync
    #   ANTHROPIC_API_KEY
    #   MEM0_API_KEY
    ```
+
 3. Run:
    ```bash
    uv run python agent.py
@@ -233,17 +234,17 @@ This decision-making is key to intelligent memory systems.
 ### Lab 1: Simple Memory Agent (100 points)
 
 **Deliverables**:
-- [ ] Completed code with new capability (40 points)
-- [ ] Test output files demonstrating memory behavior (40 points)
-- [ ] Brief report on memory patterns (20 points)
+- [X] Completed code with new capability (40 points)
+- [X] Test output files demonstrating memory behavior (40 points)
+- [X] Brief report on memory patterns (20 points)
 
 See [simple-memory-agent/EXERCISE.md](simple-memory-agent/EXERCISE.md) for detailed requirements.
 
 ### Lab 2: Simple Agent Observability (100 points)
 
 **Problem 1 (Required - 50 points)**:
-- [ ] Run agent with 3+ questions (10 points)
-- [ ] Braintrust screenshots (15 points)
+- [S] Run agent with 3+ questions (10 points)
+- [x] Braintrust screenshots (15 points)
 - [ ] analysis.md with trace and metrics analysis (25 points)
 
 **Problem 2 (Optional - 50 points)**:
